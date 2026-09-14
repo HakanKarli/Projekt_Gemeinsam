@@ -1,22 +1,41 @@
 # =============================================================
 # OHB Cleanroom Sensor Dashboard – Docker Compose
 # =============================================================
-# Starten:   docker compose up -d
-# Stoppen:   docker compose down
-# DB-Reset:  docker compose down -v   (loescht alle Daten!)
-# Logs:      docker compose logs -f postgres
+# Start (baut Images bei Bedarf neu):  docker compose up -d --build
+# Stoppen:                             docker compose down
+# DB-Reset:                            docker compose down -v   (loescht alle Daten!)
+# Logs:                                docker compose logs -f api
+#
+# Nach dem Start erreichbar:
+#   Dashboard:  http://localhost:8080
+#   API:        http://localhost:3001/api
+#   Postgres:   localhost:5432
+#   Mosquitto:  localhost:1883 (MQTT) / localhost:9001 (WebSocket)
 # =============================================================
+
+x-restart: &restart
+  restart: unless-stopped
+
+# Gemeinsame Umgebung fuer alle node-backend-Dienste (api, ingest, seed) —
+# ein Satz Variablen statt drei identischer Bloecke.
+x-backend-env: &backend-env
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: ohb_sensordata
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?bitte in .env setzen, Vorlage: .env.example}"
+  MQTT_BROKER_URL: mqtt://mosquitto:1883
 
 services:
 
   # ── PostgreSQL + TimescaleDB ──────────────────────────────
   postgres:
     image: timescale/timescaledb:latest-pg17
-    restart: unless-stopped
+    <<: *restart
     environment:
       POSTGRES_DB: ohb_sensordata
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Baum1234}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?bitte in .env setzen, Vorlage: .env.example}"
     ports:
       - "5432:5432"
     volumes:
@@ -31,7 +50,7 @@ services:
   # ── Mosquitto MQTT Broker ─────────────────────────────────
   mosquitto:
     image: eclipse-mosquitto:2
-    restart: unless-stopped
+    <<: *restart
     ports:
       - "1883:1883"     # MQTT
       - "9001:9001"     # WebSocket (fuer Frontend)
@@ -44,6 +63,72 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
+  # ── Seed: legt Reinraeume einmalig an (idempotent, ON CONFLICT DO NOTHING) ──
+  # Sensoren registrieren sich selbst beim ersten MQTT-Datenpunkt — siehe seed.js.
+  seed:
+    build: ./node-backend
+    command: ["node", "src/seed.js"]
+    restart: "no"
+    environment:
+      <<: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── REST-API + Alert-Server (Port 3001) ───────────────────
+  api:
+    build: ./node-backend
+    command: ["node", "src/server.js"]
+    <<: *restart
+    environment:
+      <<: *backend-env
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── MQTT-Bridge: schreibt Sensordaten in Postgres ─────────
+  ingest:
+    build: ./node-backend
+    command: ["node", "src/mqttBridge.js"]
+    <<: *restart
+    environment:
+      <<: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+
+  # ── React-Frontend (Vite-Build, ausgeliefert von nginx) ───
+  web:
+    build: ./ohb-dashboard
+    <<: *restart
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  # ── MQTT-Simulator: generiert Testdaten (nicht fuer Produktion) ──
+  simulator:
+    build: ./MQTT_Publish_Test
+    <<: *restart
+    environment:
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+      PYTHONUNBUFFERED: "1"   # sonst puffert Python die Konsolenausgabe, "docker compose logs" bleibt leer
+    depends_on:
+      mosquitto:
+        condition: service_healthy
 
 volumes:
   pgdata:

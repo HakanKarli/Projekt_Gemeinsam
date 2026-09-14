@@ -18,6 +18,7 @@ Voraussetzung:  pip install paho-mqtt
 
 import json
 import math
+import os
 import random
 import time
 from datetime import datetime, timezone
@@ -25,9 +26,11 @@ from datetime import datetime, timezone
 import paho.mqtt.client as mqtt
 
 # ── Einstellungen ──────────────────────────────────────────────────────────────
-BROKER_HOST = "localhost"
-BROKER_PORT = 1883
-INTERVAL    = 2.0           # Sekunden zwischen zwei Nachrichten
+# Ueber Umgebungsvariablen ueberschreibbar (siehe docker-compose.yml, Dienst
+# "simulator"); ohne Docker gelten die Vorgabewerte fuer localhost.
+BROKER_HOST = os.environ.get("MQTT_BROKER_HOST", "localhost")
+BROKER_PORT = int(os.environ.get("MQTT_BROKER_PORT", "1883"))
+INTERVAL    = float(os.environ.get("MQTT_INTERVAL", "2.0"))   # Sekunden zwischen zwei Nachrichten
 
 # ── Simulierte Sensoren ────────────────────────────────────────────────────────
 # Feste UUIDs → werden automatisch in sensor_registry eingetragen.
