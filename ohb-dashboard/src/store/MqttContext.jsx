@@ -1,8 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { MqttContext } from './contexts';
 import { useMqtt } from '../hooks/useMqtt';
 import { getSensors, renameSensor } from '../api';
-
-const MqttContext = createContext(null);
 
 const LS_NAMES_KEY = 'ohb-sensor-names';
 
@@ -78,5 +77,3 @@ export function MqttProvider({ children }) {
         </MqttContext.Provider>
     );
 }
-
-export const useMqttContext = () => useContext(MqttContext);

@@ -17,4 +17,8 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1200,
   },
+  test: {
+    environment: 'happy-dom',
+    setupFiles: ['./vitest.setup.js'],
+  },
 })

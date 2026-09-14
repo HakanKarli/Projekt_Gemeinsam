@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Plot, CHART, yRange } from '../lib/plot';
-import { useMqttContext } from '../store/MqttContext';
+import { useMqttContext } from '../store/useMqttContext';
 import './SensorPanel.css';
 
 const ACCENT    = CHART.accent;
@@ -55,6 +55,9 @@ function SensorPanel({
             subscribe(topic);
             addTopicListener(topic, onData);
         } else {
+            // Teil derselben Synchronisation mit der Subscription wie der Zweig
+            // darüber, nicht abgeleiteter Render-Zustand.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setData([]);
         }
         prevTopicRef.current = topic;

@@ -6,11 +6,6 @@ export default function Sidebar({ open, onToggle, onSelectRoom, selectedRoom, on
   const [rooms, setRooms] = useState([]);
   const [sensorCounts, setSensorCounts] = useState({});
 
-  useEffect(() => {
-    loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataVersion]);
-
   async function loadData() {
     try {
       const [roomData, sensorData] = await Promise.all([getCleanrooms(), getSensors()]);
@@ -27,6 +22,13 @@ export default function Sidebar({ open, onToggle, onSelectRoom, selectedRoom, on
       // ignore
     }
   }
+
+  // Ladevorgang bei Mount und wenn sich dataVersion aendert — Abruf vom
+  // Server, kein abzuleitender Render-Zustand.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [dataVersion]);
 
   return (
     <>

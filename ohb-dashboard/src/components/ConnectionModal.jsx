@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useMqttContext } from '../store/MqttContext';
+import { useMqttContext } from '../store/useMqttContext';
 
 export default function ConnectionModal({ onClose }) {
-    const { brokerUrl, setBrokerUrl, enabled, setEnabled, connected, error } = useMqttContext();
+    const { brokerUrl, setBrokerUrl, enabled, setEnabled, error } = useMqttContext();
     const [draft, setDraft] = useState(brokerUrl);
 
     const handleApply = () => {

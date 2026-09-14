@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import SensorPanel from './SensorPanel';
 import PanelEditModal from './PanelEditModal';
-import { useMqttContext } from '../store/MqttContext';
+import { useMqttContext } from '../store/useMqttContext';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
 import { getSensors, getSensorMetrics, getThresholds, setThreshold as apiSetThreshold } from '../api';
 import './DashboardGrid.css';

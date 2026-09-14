@@ -51,6 +51,9 @@ function CleanroomsTab() {
     catch (e) { setError(e.message); }
   };
 
+  // Einmaliger Ladevorgang beim Mounten — kein abzuleitender Wert, sondern ein
+  // Abruf vom Server, deshalb bewusst außerhalb der Regel.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   const handleAdd = async () => {
@@ -134,6 +137,9 @@ function SensorsTab() {
     } catch (e) { setError(e.message); }
   };
 
+  // Einmaliger Ladevorgang beim Mounten — kein abzuleitender Wert, sondern ein
+  // Abruf vom Server, deshalb bewusst außerhalb der Regel.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   const handleAssign = async () => {
@@ -266,10 +272,16 @@ function ThresholdsTab() {
     } catch (e) { setError(e.message); }
   };
 
+  // Einmaliger Ladevorgang beim Mounten — kein abzuleitender Wert, sondern ein
+  // Abruf vom Server, deshalb bewusst außerhalb der Regel.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   // Messgrößen laden sobald ein Sensor gewählt wird
   useEffect(() => {
+    // Rücksetzen bei fehlender Auswahl ist Teil derselben Synchronisation mit
+    // der Auswahl wie der Abruf darunter, nicht abgeleiteter Render-Zustand.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!selSensor) { setQuantities([]); setQuantity(''); return; }
     setLoadingQty(true);
     setQuantity('');

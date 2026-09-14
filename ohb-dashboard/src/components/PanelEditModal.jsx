@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMqttContext } from '../store/MqttContext';
+import { useMqttContext } from '../store/useMqttContext';
 import './PanelEditModal.css';
 
 export default function PanelEditModal({ panel, onSave, onClose }) {
