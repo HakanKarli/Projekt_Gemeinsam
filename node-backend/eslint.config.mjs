@@ -34,6 +34,21 @@ export default [
   },
 
   {
+    // Legacy-MVP-Dateien (Vorgänger von app.js/ingest.js + lib/logger.js):
+    // nutzen bewusst console statt des strukturierten pino-Loggers. Ausnahme,
+    // bis entschieden ist, ob sie auf den Logger umgestellt oder abgelöst werden.
+    files: [
+      'src/server.js',
+      'src/mqttBridge.js',
+      'src/seed.js',
+      'src/migrate.js',
+      'src/alertListener.js',
+      'src/test.js',
+    ],
+    rules: { 'no-console': 'off' },
+  },
+
+  {
     // Tests und Werkzeugkonfiguration: ES-Module
     files: ['test/**/*.js', '*.mjs'],
     languageOptions: {
