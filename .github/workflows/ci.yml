@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Ein laufender Durchlauf pro Branch reicht; ältere werden abgebrochen.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — Lint, Migrationen, Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: node-backend/package-lock.json
+
+      - name: Abhängigkeiten installieren
+        working-directory: node-backend
+        run: npm ci
+
+      - name: Lint
+        working-directory: node-backend
+        run: npx eslint .
+
+      # Die Tests starten über Testcontainers eine echte TimescaleDB und wenden
+      # dabei sämtliche Migrationen an. Damit ist bei jedem Durchlauf bewiesen,
+      # dass sich das Schema aus dem Nichts reproduzieren lässt — die Grundlage
+      # jeder Wiederherstellung.
+      - name: Tests
+        working-directory: node-backend
+        run: npm test
+        env:
+          POSTGRES_PASSWORD: ci-platzhalter
+
+      - name: OpenAPI-Dokument ist aktuell
+        working-directory: node-backend
+        run: npm run openapi:export
+        env:
+          POSTGRES_PASSWORD: ci-platzhalter
+
+      - name: Keine unversionierten Änderungen an docs/openapi.yaml
+        run: git diff --exit-code -- docs/openapi.yaml
+
+      # Nur Produktionsabhängigkeiten: Schwachstellen in Entwicklungswerkzeugen
+      # (ESLint, Testcontainers) werden nicht ausgeliefert und erzeugten sonst
+      # dauerhaftes Rauschen ohne Sicherheitsgewinn.
+      - name: Sicherheitsprüfung der Laufzeitabhängigkeiten
+        working-directory: node-backend
+        run: npm audit --omit=dev --audit-level=high
+
+  frontend:
+    name: Frontend — Lint, Tests, Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ohb-dashboard/package-lock.json
+
+      - name: Abhängigkeiten installieren
+        working-directory: ohb-dashboard
+        run: npm ci
+
+      - name: Lint
+        working-directory: ohb-dashboard
+        run: npm run lint
+
+      - name: Tests
+        working-directory: ohb-dashboard
+        run: npm test
+
+      - name: Build
+        working-directory: ohb-dashboard
+        run: npm run build
+
+      - name: Sicherheitsprüfung der Laufzeitabhängigkeiten
+        working-directory: ohb-dashboard
+        run: npm audit --omit=dev --audit-level=high

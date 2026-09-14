@@ -1,0 +1,148 @@
+/* ── Config Panel ─────────────────────────────────── */
+.config-box {
+  width: min(720px, 94vw);
+  max-height: 85vh;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+/* Tabs */
+.config-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.config-tab {
+  padding: 8px 18px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-sub);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.config-tab:hover {
+  color: var(--text);
+}
+
+.config-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Content area */
+.config-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.config-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* Form rows */
+.config-form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.config-form-row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.config-form-row .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Error */
+.config-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #ef4444;
+}
+
+/* Table */
+.config-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.config-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.config-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.config-table code {
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.config-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.config-empty {
+  text-align: center;
+  color: var(--text-sub);
+  padding: 24px 10px !important;
+}
+
+/* Small button variant */
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* Select styling */
+select.input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+  cursor: pointer;
+}
+
+select.input option {
+  background: #0d1117;
+  color: var(--text);
+}

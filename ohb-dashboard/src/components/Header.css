@@ -1,0 +1,107 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: var(--header-h);
+    background:
+        linear-gradient(90deg, rgba(10, 35, 66, 0.96) 0%, rgba(10, 18, 36, 0.96) 100%);
+    border-bottom: 1px solid rgba(0, 170, 255, 0.18);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* feiner Akzent-Strich unter dem Header */
+.header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+}
+
+.header-left,
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Real OHB logo image – white BG removed via screen blend mode */
+.header-logo-img {
+    height: 36px;
+    width: auto;
+    /* Removes the white background so the logo sits cleanly on dark header */
+    mix-blend-mode: screen;
+    filter: brightness(1.1);
+    display: block;
+}
+
+.header-brand-sub {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Status badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-ok {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success);
+}
+
+.status-ok .status-dot {
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+    animation: pulse 2s infinite;
+}
+
+.status-err {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.status-err .status-dot {
+    background: var(--danger);
+}
+
+.status-off {
+    border-color: var(--border);
+    background: transparent;
+    color: var(--text-sub);
+}
+
+.status-off .status-dot {
+    background: var(--text-sub);
+}

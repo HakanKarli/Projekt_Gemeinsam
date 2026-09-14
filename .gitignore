@@ -1,0 +1,33 @@
+# ── Zugangsdaten ──────────────────────────────────────────────
+# Niemals einchecken. Vorlage ist node-backend/.env.example
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ── Abhängigkeiten & Build-Artefakte ──────────────────────────
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ── Betrieb ───────────────────────────────────────────────────
+# Lokale Backup-Repositories und Container-Volumes
+backup/
+*.log
+logs/
+
+# ── Editoren & Betriebssystem ─────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.sw?

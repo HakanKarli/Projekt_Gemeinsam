@@ -1,0 +1,128 @@
+.pem-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 600;
+  backdrop-filter: blur(4px);
+  padding: 16px;
+}
+
+.pem-modal {
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.15s ease;
+}
+
+.pem-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pem-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pem-close {
+  padding: 4px 8px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.pem-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pem-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+.pem-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.pem-input:focus {
+  border-color: var(--accent);
+}
+
+.pem-hint {
+  font-size: 11px;
+  color: var(--text-sub);
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.pem-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pem-info-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pem-info-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  min-width: 100px;
+}
+
+.pem-info-label {
+  font-size: 10px;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pem-info-value {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.pem-optional {
+  font-size: 11px;
+  color: var(--text-sub);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.pem-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}

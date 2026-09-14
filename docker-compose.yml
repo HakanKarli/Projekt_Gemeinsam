@@ -1,0 +1,51 @@
+# =============================================================
+# OHB Cleanroom Sensor Dashboard – Docker Compose
+# =============================================================
+# Starten:   docker compose up -d
+# Stoppen:   docker compose down
+# DB-Reset:  docker compose down -v   (loescht alle Daten!)
+# Logs:      docker compose logs -f postgres
+# =============================================================
+
+services:
+
+  # ── PostgreSQL + TimescaleDB ──────────────────────────────
+  postgres:
+    image: timescale/timescaledb:latest-pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ohb_sensordata
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Baum1234}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ohb_sensordata"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Mosquitto MQTT Broker ─────────────────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "1883:1883"     # MQTT
+      - "9001:9001"     # WebSocket (fuer Frontend)
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/#' -C 1 -W 3 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pgdata:
+  mosquitto_data:
+  mosquitto_log:

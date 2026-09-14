@@ -1,0 +1,50 @@
+[Unit]
+Description=OHB Edge-Agent (Messwerterfassung Reinraum)
+Documentation=file:///opt/ohb-edge/README.md
+# Erst nach dem Netzwerk starten. Die Uhrzeit wird zusätzlich zur Laufzeit geprüft —
+# ein Start ohne NTP ist ausdrücklich zulässig, es wird dann gepuffert.
+After=network-online.target time-sync.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ohb
+Group=ohb
+WorkingDirectory=/opt/ohb-edge
+EnvironmentFile=/etc/ohb-edge/agent.env
+ExecStart=/opt/ohb-edge/.venv/bin/python -m ohb_edge
+
+# Immer neu starten. Der Agent beendet sich bei erkanntem Defekt selbst —
+# der Neustart IST der Reparaturmechanismus.
+Restart=always
+RestartSec=5
+# Nach fünf Fehlstarts in einer Minute aufgeben, statt in einer Schleife zu drehen.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Zeit für den letzten Puffer-Versand beim Beenden
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Schreibbare Verzeichnisse werden von systemd angelegt und mitgeräumt
+StateDirectory=ohb-edge
+RuntimeDirectory=ohb-edge
+
+# ── Absicherung ──────────────────────────────────────────────
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# Für GPIO/I2C/SPI ergänzen:
+#   SupplementaryGroups=gpio i2c spi dialout
+#   DeviceAllow=/dev/i2c-1 rw
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ohb-edge
+
+[Install]
+WantedBy=multi-user.target

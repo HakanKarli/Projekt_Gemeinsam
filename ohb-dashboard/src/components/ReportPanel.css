@@ -1,0 +1,142 @@
+/* ── Report Panel ─────────────────────────────────── */
+.report-box {
+  width: min(680px, 94vw);
+  max-height: 85vh;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.report-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-right: 4px;
+}
+
+/* Sections */
+.report-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.report-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Time row */
+.report-time-row {
+  display: flex;
+  gap: 16px;
+}
+
+.report-time-row label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+.report-time-row .input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Chip grid */
+.report-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.report-chip {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-sub);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.report-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.report-chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.report-chip-id {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.report-chip-sub {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+/* Error */
+.report-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 6px;
+}
+
+/* Generate button */
+.report-generate {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Small button */
+.btn-sm {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+.report-empty {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-style: italic;
+}
+
+.report-hint {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin: 0;
+  font-style: italic;
+}

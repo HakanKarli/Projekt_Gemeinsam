@@ -1,0 +1,215 @@
+.sensor-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 260px;
+    transition: box-shadow 0.2s, border-color 0.3s;
+}
+
+.sensor-panel:hover {
+    box-shadow: 0 8px 40px rgba(0, 170, 255, 0.12);
+}
+
+/* Violation: roter Rand wenn Schwellenwert verletzt */
+.sensor-panel--violation {
+    box-shadow: 0 0 0 1.5px rgba(239, 68, 68, 0.6), 0 8px 40px rgba(239, 68, 68, 0.15) !important;
+    animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 1.5px rgba(239, 68, 68, 0.6), 0 8px 40px rgba(239, 68, 68, 0.15); }
+    50%       { box-shadow: 0 0 0 2px   rgba(239, 68, 68, 0.9), 0 8px 40px rgba(239, 68, 68, 0.30); }
+}
+
+/* ── Header ── */
+.sp-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ── Label-Zeile (ersetzt das manuelle Topic-Input) ── */
+.sp-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sp-label-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.sp-label-main {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sp-label-room {
+    font-size: 11px;
+    color: var(--accent);
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sp-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.sp-chip {
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border-radius: 20px;
+    padding: 2px 10px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sp-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    transition: color 0.3s;
+}
+
+/* Roter Wert bei Verletzung */
+.sp-value--violation {
+    color: #ef4444;
+}
+
+.sp-unit {
+    font-size: 12px;
+    color: var(--text-sub);
+    font-weight: 400;
+}
+
+/* ── Schwellenwert-Badges ── */
+.sp-thresholds {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sp-threshold-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.2px;
+}
+
+.sp-threshold-max {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.sp-threshold-min {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.12);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+/* ── Chart area ── */
+/* Feste Höhe: verhindert eine Plotly-autosize-Rückkopplungsschleife
+   (Panel wuchs sonst bei jedem Update). Im Vollbild via Override flexibel. */
+.sp-chart-wrap {
+    flex: none;
+    min-height: 0;
+    height: 210px;
+    position: relative;
+}
+
+.sp-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-sub);
+    font-size: 12px;
+    text-align: center;
+    padding: 20px;
+}
+
+.sp-spinner {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Icon button group ── */
+.sp-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.sp-btn-icon {
+    flex-shrink: 0;
+    padding: 7px 8px;
+    color: var(--text-sub);
+    transition: color 0.2s;
+}
+
+.sp-btn-icon:hover {
+    color: var(--accent);
+}
+
+.sp-btn-delete:hover {
+    color: var(--danger);
+}
+
+/* ── Fullscreen overlay ── */
+.sp-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0;
+    animation: fadeIn 0.18s ease;
+}
+
+/* Grow chart area when fullscreen */
+.sp-fullscreen .sp-chart-wrap {
+    height: auto;
+    flex: 1;
+}
+
+/* Placeholder keeps the grid slot from collapsing */
+.sp-placeholder {
+    opacity: 0;
+    pointer-events: none;
+}

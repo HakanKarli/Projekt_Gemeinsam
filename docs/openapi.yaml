@@ -1,0 +1,1409 @@
+# =============================================================
+# ERZEUGTE DATEI — nicht von Hand bearbeiten.
+#
+# Quelle sind die Zod-Schemata in src/domain/schemas/ und die
+# registerPath-Aufrufe in src/http/routes/.
+# Neu erzeugen:  npm run openapi:export
+# =============================================================
+openapi: 3.1.0
+info:
+  title: OHB Reinraum Sensor Dashboard — API
+  version: 1.0.0
+  description: |-
+    Schnittstelle des Reinraum-Überwachungssystems.
+
+    **Fehlerformat:** Alle Fehler antworten mit `{ error: { code, message, details? }, requestId }`.
+    Die `requestId` steht zusätzlich im Antwort-Header `X-Request-Id` und erlaubt die
+    Zuordnung zu den Logzeilen des Servers.
+
+    **Zeitangaben:** durchgängig ISO 8601 mit Zeitzonenangabe (`timestamptz`).
+
+    **Zeitraum-Versionierung:** Zuordnungen und Schwellenwerte werden nie überschrieben.
+    Eine Änderung schließt den bisherigen Gültigkeitszeitraum und öffnet einen neuen.
+    Auswertungen beziehen sich deshalb immer auf den Stand zum jeweiligen Zeitpunkt.
+servers:
+  - url: /
+    description: Gleiche Herkunft (hinter nginx)
+tags:
+  - name: Betrieb
+    description: Zustand und Bereitschaft
+  - name: Reinräume
+    description: Räume und Bereiche
+  - name: Sensoren
+    description: Register der selbstregistrierenden Sensoren
+  - name: Zuordnungen
+    description: Welcher Sensor war wann in welchem Raum
+  - name: Schwellenwerte
+    description: Grenzwerte mit Gültigkeitszeitraum
+  - name: Messdaten
+    description: Zeitreihen und Panel-Manifest
+  - name: Alarme
+    description: Schwellenwert-Verletzungen und Live-Kanal
+  - name: Report
+    description: Audit-Report als PDF
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Stabiler Fehlercode für Clients
+            message:
+              type: string
+            details: {}
+          required:
+            - code
+            - message
+        requestId:
+          type: string
+          description: Korrelations-ID, auch im Header X-Request-Id
+      required:
+        - error
+        - requestId
+    HealthReport:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+        problems:
+          type: array
+          items:
+            type: string
+        metrics:
+          type: object
+          properties:
+            worst_lag_sec:
+              type:
+                - number
+                - "null"
+              description: Alter der ältesten letzten Messung
+            open_alerts:
+              type: integer
+            db_bytes:
+              type: integer
+            archive_enabled:
+              type:
+                - boolean
+                - "null"
+            archive_backlog:
+              type:
+                - integer
+                - "null"
+            archive_last_failed:
+              anyOf:
+                - type: string
+                  format: date-time
+                - type: string
+                - type: "null"
+              description: Zeitpunkt der letzten gescheiterten Archivierung — historisch, nicht zwingend aktuell
+            archive_last_success:
+              anyOf:
+                - type: string
+                  format: date-time
+                - type: string
+                - type: "null"
+              description: Ist er jünger als archive_last_failed, läuft die Archivierung wieder
+          required:
+            - worst_lag_sec
+            - open_alerts
+            - db_bytes
+            - archive_enabled
+            - archive_backlog
+            - archive_last_failed
+            - archive_last_success
+        thresholds:
+          type: object
+          properties:
+            max_ingest_lag_sec:
+              type: number
+            max_archive_backlog:
+              type: integer
+          required:
+            - max_ingest_lag_sec
+            - max_archive_backlog
+      required:
+        - status
+        - problems
+        - metrics
+        - thresholds
+    Cleanroom:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+        - name
+    CreateCleanroomBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+        - name
+    Sensor:
+      type: object
+      properties:
+        sensor_uuid:
+          type: string
+        name:
+          type: string
+        gateway_id:
+          type:
+            - string
+            - "null"
+        event_driven:
+          type: integer
+          description: 0 = zyklisch, 1 = event-getrieben
+        created_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+        cleanroom_id:
+          type:
+            - integer
+            - "null"
+        cleanroom_name:
+          type:
+            - string
+            - "null"
+        quantities:
+          type: array
+          items:
+            type: string
+          description: Bisher gemessene Größen
+      required:
+        - sensor_uuid
+        - name
+        - gateway_id
+        - event_driven
+        - created_at
+        - cleanroom_id
+        - cleanroom_name
+        - quantities
+    RenameSensorBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+        - name
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: integer
+        sensor_uuid:
+          type: string
+        sensor_name:
+          type:
+            - string
+            - "null"
+        gateway_id:
+          type:
+            - string
+            - "null"
+        cleanroom_id:
+          type: integer
+        cleanroom_name:
+          type: string
+        valid_during:
+          description: Gültigkeitszeitraum als tstzrange
+      required:
+        - id
+        - sensor_uuid
+        - sensor_name
+        - gateway_id
+        - cleanroom_id
+        - cleanroom_name
+    AssignmentHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        sensor_uuid:
+          type: string
+        cleanroom_id:
+          type: integer
+        cleanroom_name:
+          type: string
+        valid_from:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+            - type: "null"
+        valid_to:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+            - type: "null"
+          description: null = bis auf Weiteres
+      required:
+        - id
+        - sensor_uuid
+        - cleanroom_id
+        - cleanroom_name
+        - valid_from
+        - valid_to
+    CreateAssignmentBody:
+      type: object
+      properties:
+        sensor_uuid:
+          type: string
+          format: uuid
+          description: Sensor-Kennung im Format 8-4-4-4-12
+        cleanroom_id:
+          type: integer
+          exclusiveMinimum: 0
+      required:
+        - sensor_uuid
+        - cleanroom_id
+    Threshold:
+      type: object
+      properties:
+        id:
+          type: integer
+        sensor_uuid:
+          type: string
+        quantity:
+          type: string
+        min_value:
+          type:
+            - number
+            - "null"
+        max_value:
+          type:
+            - number
+            - "null"
+        valid_during: {}
+      required:
+        - id
+        - sensor_uuid
+        - quantity
+        - min_value
+        - max_value
+    SetThresholdBody:
+      type: object
+      properties:
+        sensor_uuid:
+          type: string
+          format: uuid
+          description: Sensor-Kennung im Format 8-4-4-4-12
+        quantity:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Messgröße
+        min_value:
+          type:
+            - number
+            - "null"
+        max_value:
+          type:
+            - number
+            - "null"
+      required:
+        - sensor_uuid
+        - quantity
+    DataPoint:
+      type: object
+      properties:
+        time:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+        quantity:
+          type: string
+        unit:
+          type: string
+        value:
+          type: number
+      required:
+        - time
+        - quantity
+        - unit
+        - value
+    Panel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: sensor_uuid/quantity — stabile Kennung des Kanals
+        sensor_uuid:
+          type: string
+        sensor_name:
+          type: string
+        quantity:
+          type: string
+        unit:
+          type:
+            - string
+            - "null"
+        cleanroom_id:
+          type:
+            - integer
+            - "null"
+        cleanroom_name:
+          type:
+            - string
+            - "null"
+        min_value:
+          type:
+            - number
+            - "null"
+        max_value:
+          type:
+            - number
+            - "null"
+      required:
+        - id
+        - sensor_uuid
+        - sensor_name
+        - quantity
+        - unit
+        - cleanroom_id
+        - cleanroom_name
+        - min_value
+        - max_value
+    Violation:
+      type: object
+      properties:
+        id:
+          type: integer
+        sensor_uuid:
+          type: string
+        sensor_name:
+          type:
+            - string
+            - "null"
+        cleanroom_id:
+          type:
+            - integer
+            - "null"
+        cleanroom_name:
+          type:
+            - string
+            - "null"
+        quantity:
+          type: string
+        violation_type:
+          type: string
+          enum:
+            - below_min
+            - above_max
+        threshold_min:
+          type:
+            - number
+            - "null"
+        threshold_max:
+          type:
+            - number
+            - "null"
+        started_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+        ended_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+            - type: "null"
+          description: null = läuft noch
+        duration_sec:
+          type:
+            - number
+            - "null"
+        first_value:
+          type: number
+        last_value:
+          type:
+            - number
+            - "null"
+        peak_value:
+          type: number
+          description: Extremster Wert des Ereignisses
+        data_points:
+          type: integer
+        acknowledged:
+          type: boolean
+      required:
+        - id
+        - sensor_uuid
+        - sensor_name
+        - cleanroom_id
+        - cleanroom_name
+        - quantity
+        - violation_type
+        - threshold_min
+        - threshold_max
+        - started_at
+        - ended_at
+        - duration_sec
+        - first_value
+        - last_value
+        - peak_value
+        - data_points
+        - acknowledged
+    ViolationSummaryEntry:
+      type: object
+      properties:
+        cleanroom_id:
+          type:
+            - integer
+            - "null"
+        cleanroom_name:
+          type:
+            - string
+            - "null"
+        quantity:
+          type: string
+        violation_type:
+          type: string
+          enum:
+            - below_min
+            - above_max
+        event_count:
+          type: integer
+        total_data_points:
+          type: integer
+        total_duration_sec:
+          type:
+            - number
+            - "null"
+        first_event:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+        last_event:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+      required:
+        - cleanroom_id
+        - cleanroom_name
+        - quantity
+        - violation_type
+        - event_count
+        - total_data_points
+        - total_duration_sec
+        - first_event
+        - last_event
+    ReportBody:
+      type: object
+      properties:
+        cleanroom_id:
+          type: integer
+          exclusiveMinimum: 0
+        from:
+          type: string
+          format: date-time
+          description: Zeitpunkt nach ISO 8601
+        to:
+          type: string
+          format: date-time
+          description: Zeitpunkt nach ISO 8601
+      required:
+        - cleanroom_id
+        - from
+        - to
+  parameters: {}
+paths:
+  /healthz:
+    get:
+      tags:
+        - Betrieb
+      summary: Lebenszeichen des Prozesses
+      description: Ohne Datenbankzugriff — beantwortet ausschließlich, ob der Prozess reagiert.
+      responses:
+        "200":
+          description: Prozess reagiert
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ok
+                  uptime_sec:
+                    type: integer
+                required:
+                  - status
+                  - uptime_sec
+  /readyz:
+    get:
+      tags:
+        - Betrieb
+      summary: Bereitschaft
+      description: Prüft die Datenbankverbindung. Für die Startreihenfolge im Container-Verbund.
+      responses:
+        "200":
+          description: Bereit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ready
+                required:
+                  - status
+        "503":
+          description: Dienst nicht verfügbar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/health/deep:
+    get:
+      tags:
+        - Betrieb
+      summary: Ausführlicher Systemzustand
+      description: |-
+        Liefert die Kennzahlen, auf die die Überwachung anschlägt:
+
+        - `worst_lag_sec` — Alter der jüngsten Messung des am längsten schweigenden
+          zugeordneten Sensors. Entlarvt ein Dashboard, das nur noch alte Kurven zeigt.
+        - `archive_last_failed` / `archive_backlog` — fangen die häufigste
+          PostgreSQL-Störung ab: Das Archivkommando scheitert still, WAL-Segmente stapeln
+          sich, die Platte läuft voll.
+
+        Antwortet mit **503**, sobald eine Schwelle überschritten ist.
+      responses:
+        "200":
+          description: Alles in Ordnung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReport"
+        "503":
+          description: Beeinträchtigt — siehe problems
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReport"
+  /api/cleanrooms:
+    get:
+      tags:
+        - Reinräume
+      summary: Alle Reinräume auflisten
+      responses:
+        "200":
+          description: Liste der Reinräume
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cleanroom"
+    post:
+      tags:
+        - Reinräume
+      summary: Reinraum anlegen
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCleanroomBody"
+      responses:
+        "201":
+          description: Angelegter Reinraum
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cleanroom"
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Konflikt mit dem aktuellen Zustand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/cleanrooms/{id}:
+    delete:
+      tags:
+        - Reinräume
+      summary: Reinraum löschen
+      description: Laufende Zuordnungen werden abgeschlossen, Verletzungen behalten ihre Historie und
+        verlieren lediglich den Raumbezug.
+      parameters:
+        - schema:
+            type: integer
+            exclusiveMinimum: 0
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Gelöscht
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/sensors:
+    get:
+      tags:
+        - Sensoren
+      summary: Alle registrierten Sensoren
+      description: "Sensoren werden nicht angelegt: Sie tragen sich beim ersten MQTT-Kontakt selbst ein.
+        Die Antwort enthält den aktuell zugeordneten Reinraum und alle bisher gemessenen Größen."
+      responses:
+        "200":
+          description: Liste der Sensoren
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sensor"
+  /api/sensors/{sensor_uuid}:
+    patch:
+      tags:
+        - Sensoren
+      summary: Sensor umbenennen
+      description: Ein hier vergebener Name wird vom Ingest nie durch einen vom Gerät gemeldeten Namen
+        überschrieben.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Sensor-Kennung im Format 8-4-4-4-12
+          required: true
+          description: Sensor-Kennung im Format 8-4-4-4-12
+          name: sensor_uuid
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenameSensorBody"
+      responses:
+        "200":
+          description: Aktualisierter Sensor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sensor_uuid:
+                    type: string
+                  name:
+                    type: string
+                  gateway_id:
+                    type:
+                      - string
+                      - "null"
+                  event_driven:
+                    type: integer
+                    description: 0 = zyklisch, 1 = event-getrieben
+                  created_at:
+                    anyOf:
+                      - type: string
+                        format: date-time
+                      - type: string
+                  cleanroom_id:
+                    type:
+                      - integer
+                      - "null"
+                  cleanroom_name:
+                    type:
+                      - string
+                      - "null"
+                  quantities:
+                    type: array
+                    items:
+                      type: string
+                    description: Bisher gemessene Größen
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - Sensoren
+      summary: Sensor entfernen
+      description: Entfernt Register-Eintrag, Zuordnungen, Schwellenwerte und Verletzungen. Die Messdaten
+        selbst bleiben erhalten — sie gehören zur Historie des Reinraums.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Sensor-Kennung im Format 8-4-4-4-12
+          required: true
+          description: Sensor-Kennung im Format 8-4-4-4-12
+          name: sensor_uuid
+          in: path
+      responses:
+        "200":
+          description: Entfernt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/assignments:
+    get:
+      tags:
+        - Zuordnungen
+      summary: Aktuell gültige Zuordnungen
+      responses:
+        "200":
+          description: Zuordnungen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assignment"
+    post:
+      tags:
+        - Zuordnungen
+      summary: Sensor einem Reinraum zuordnen
+      description: Schließt die bisherige Zuordnung ab und öffnet eine neue — beides in einer Transaktion,
+        sodass weder Lücke noch Überschneidung entstehen kann.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssignmentBody"
+      responses:
+        "201":
+          description: Neue Zuordnung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  sensor_uuid:
+                    type: string
+                  sensor_name:
+                    type:
+                      - string
+                      - "null"
+                  gateway_id:
+                    type:
+                      - string
+                      - "null"
+                  cleanroom_id:
+                    type: integer
+                  cleanroom_name:
+                    type: string
+                  valid_during:
+                    description: Gültigkeitszeitraum als tstzrange
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Konflikt mit dem aktuellen Zustand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/assignments/history:
+    get:
+      tags:
+        - Zuordnungen
+      summary: Vollständige Raum-Historie eines Sensors
+      description: "`valid_to = null` bedeutet: bis auf Weiteres gültig."
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Sensor-Kennung im Format 8-4-4-4-12
+          required: true
+          description: Sensor-Kennung im Format 8-4-4-4-12
+          name: sensor_uuid
+          in: query
+      responses:
+        "200":
+          description: Historie, neueste zuerst
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssignmentHistoryEntry"
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/thresholds:
+    get:
+      tags:
+        - Schwellenwerte
+      summary: Aktuell gültige Schwellenwerte
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Sensor-Kennung im Format 8-4-4-4-12
+          required: false
+          description: Sensor-Kennung im Format 8-4-4-4-12
+          name: sensor_uuid
+          in: query
+      responses:
+        "200":
+          description: Schwellenwerte
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Threshold"
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags:
+        - Schwellenwerte
+      summary: Schwellenwert setzen
+      description: Der bisherige Wert wird nicht überschrieben, sondern sein Gültigkeitszeitraum
+        abgeschlossen. Auswertungen vergangener Zeiträume bleiben dadurch korrekt.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetThresholdBody"
+      responses:
+        "201":
+          description: Neuer Schwellenwert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Threshold"
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Konflikt mit dem aktuellen Zustand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/thresholds/{id}:
+    delete:
+      tags:
+        - Schwellenwerte
+      summary: Schwellenwert außer Kraft setzen
+      description: "Kein echtes Löschen: Der Eintrag bleibt als historischer Beleg erhalten und wird
+        lediglich zeitlich abgeschlossen."
+      parameters:
+        - schema:
+            type: integer
+            exclusiveMinimum: 0
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Abgeschlossener Schwellenwert
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                  threshold:
+                    $ref: "#/components/schemas/Threshold"
+                required:
+                  - deleted
+                  - threshold
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/sensordata:
+    get:
+      tags:
+        - Messdaten
+      summary: Zeitreihe eines Kanals
+      description: Ohne Zeitangaben werden die letzten 24 Stunden geliefert. Bei Erreichen von `limit`
+        werden die JÜNGSTEN Werte zurückgegeben; die Ausgabe ist aufsteigend sortiert.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Sensor-Kennung im Format 8-4-4-4-12
+          required: true
+          description: Sensor-Kennung im Format 8-4-4-4-12
+          name: sensor_uuid
+          in: query
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+            description: Messgröße
+          required: true
+          description: Messgröße
+          name: quantity
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: "Standard: vor 24 Stunden"
+          required: false
+          description: "Standard: vor 24 Stunden"
+          name: from
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: "Standard: jetzt"
+          required: false
+          description: "Standard: jetzt"
+          name: to
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 5000
+            default: 500
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Messwerte, älteste zuerst
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataPoint"
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/sensordata/metrics:
+    get:
+      tags:
+        - Messdaten
+      summary: Verfügbare Messgrößen eines Sensors
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Sensor-Kennung im Format 8-4-4-4-12
+          required: true
+          description: Sensor-Kennung im Format 8-4-4-4-12
+          name: sensor_uuid
+          in: query
+      responses:
+        "200":
+          description: Messgrößen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/panels:
+    get:
+      tags:
+        - Messdaten
+      summary: Panel-Manifest für das Dashboard
+      description: |-
+        Liefert alle darzustellenden Kanäle in EINER Anfrage — Sensor, Reinraum,
+        Messgröße, Einheit und den aktuell gültigen Schwellenwert.
+
+        Ersetzt das frühere Vorgehen, bei dem das Frontend die Sensorliste holte und
+        danach je Sensor zwei weitere Anfragen stellte.
+
+        Enthalten sind ausschließlich Kanäle von Sensoren, die aktuell einem Reinraum
+        zugeordnet sind.
+      parameters:
+        - schema:
+            type: integer
+            exclusiveMinimum: 0
+          required: false
+          name: cleanroom_id
+          in: query
+      responses:
+        "200":
+          description: Kanäle
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Panel"
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/violations:
+    get:
+      tags:
+        - Alarme
+      summary: Schwellenwert-Verletzungen
+      description: "Ein Eintrag ist ein EREIGNIS, kein Einzelmesswert: Eine zehnminütige Überschreitung
+        bei 2-Sekunden-Takt erzeugt 300 Messwerte, aber genau einen Eintrag mit Extremwert, Dauer
+        und Anzahl betroffener Punkte."
+      parameters:
+        - schema:
+            type: integer
+            exclusiveMinimum: 0
+          required: false
+          name: cleanroom_id
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Sensor-Kennung im Format 8-4-4-4-12
+          required: false
+          description: Sensor-Kennung im Format 8-4-4-4-12
+          name: sensor_uuid
+          in: query
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+            description: Messgröße
+          required: false
+          description: Messgröße
+          name: quantity
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: Zeitpunkt nach ISO 8601
+          required: false
+          description: Zeitpunkt nach ISO 8601
+          name: from
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: Zeitpunkt nach ISO 8601
+          required: false
+          description: Zeitpunkt nach ISO 8601
+          name: to
+          in: query
+        - schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+            description: true = noch laufend
+          required: false
+          description: true = noch laufend
+          name: active
+          in: query
+        - schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+          required: false
+          name: acknowledged
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 5000
+            default: 200
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Verletzungen, neueste zuerst
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Violation"
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/violations/summary:
+    get:
+      tags:
+        - Alarme
+      summary: Aggregat je Reinraum, Messgröße und Verletzungsart
+      parameters:
+        - schema:
+            type: string
+            format: date-time
+            description: Zeitpunkt nach ISO 8601
+          required: false
+          description: Zeitpunkt nach ISO 8601
+          name: from
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: Zeitpunkt nach ISO 8601
+          required: false
+          description: Zeitpunkt nach ISO 8601
+          name: to
+          in: query
+      responses:
+        "200":
+          description: Aggregat
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ViolationSummaryEntry"
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/violations/{id}/acknowledge:
+    patch:
+      tags:
+        - Alarme
+      summary: Verletzung quittieren
+      parameters:
+        - schema:
+            type: integer
+            exclusiveMinimum: 0
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Quittierte Verletzung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  sensor_uuid:
+                    type: string
+                  sensor_name:
+                    type:
+                      - string
+                      - "null"
+                  cleanroom_id:
+                    type:
+                      - integer
+                      - "null"
+                  cleanroom_name:
+                    type:
+                      - string
+                      - "null"
+                  quantity:
+                    type: string
+                  violation_type:
+                    type: string
+                    enum:
+                      - below_min
+                      - above_max
+                  threshold_min:
+                    type:
+                      - number
+                      - "null"
+                  threshold_max:
+                    type:
+                      - number
+                      - "null"
+                  started_at:
+                    anyOf:
+                      - type: string
+                        format: date-time
+                      - type: string
+                  ended_at:
+                    anyOf:
+                      - type: string
+                        format: date-time
+                      - type: string
+                      - type: "null"
+                    description: null = läuft noch
+                  duration_sec:
+                    type:
+                      - number
+                      - "null"
+                  first_value:
+                    type: number
+                  last_value:
+                    type:
+                      - number
+                      - "null"
+                  peak_value:
+                    type: number
+                    description: Extremster Wert des Ereignisses
+                  data_points:
+                    type: integer
+                  acknowledged:
+                    type: boolean
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/report:
+    post:
+      tags:
+        - Report
+      summary: Audit-Report als PDF erzeugen
+      description: |-
+        Berücksichtigt alle Sensoren, die im gewählten Zeitraum diesem Reinraum zugeordnet
+        WAREN — nicht die heute zugeordneten. Schwellenwert-Änderungen werden mit ihrem
+        jeweiligen Gültigkeitszeitraum ausgewiesen, und jeder Messwert wird gegen den
+        Grenzwert bewertet, der zu seinem Zeitpunkt galt.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportBody"
+      responses:
+        "200":
+          description: PDF-Dokument
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Ungültige Eingabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/alerts/stream:
+    get:
+      tags:
+        - Alarme
+      summary: Live-Kanal für Alarme (Server-Sent Events)
+      description: |-
+        Dauerhafte Verbindung im Format `text/event-stream`. Jede neu geöffnete
+        Schwellenwert-Verletzung wird als JSON-Ereignis gesendet.
+
+        Alle 20 Sekunden folgt eine Kommentarzeile (`: ping`) als Lebenszeichen — ohne sie
+        schließen Proxys die Verbindung nach ihrem Leerlauf-Timeout.
+
+        Die Nutzlast entspricht `Violation`, ergänzt um `value` (auslösender Messwert).
+      responses:
+        "200":
+          description: Ereignisstrom
+          content:
+            text/event-stream:
+              schema:
+                type: string
+webhooks: {}

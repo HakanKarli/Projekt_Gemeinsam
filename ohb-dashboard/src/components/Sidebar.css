@@ -1,0 +1,173 @@
+/* ── Sidebar ──────────────────────────────────────── */
+
+/* Toggle button – always visible */
+.sidebar-toggle {
+  position: fixed;
+  top: calc(var(--header-h) + 14px);
+  left: 12px;
+  z-index: 200;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-sub);
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-sm);
+}
+.sidebar-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(0, 170, 255, 0.10);
+}
+
+/* Panel */
+.sidebar {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  bottom: 0;
+  width: 240px;
+  background:
+    linear-gradient(180deg, rgba(10, 30, 56, 0.96) 0%, rgba(9, 13, 20, 0.98) 100%);
+  border-right: 1px solid var(--border);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px;
+  transform: translateX(-100%);
+  transition: transform 0.28s var(--ease);
+  overflow-y: auto;
+}
+
+.sidebar-open {
+  transform: translateX(0);
+}
+
+/* When sidebar is open, shift toggle button */
+.sidebar-open ~ .sidebar-toggle,
+.sidebar-open + .sidebar-toggle {
+  /* handled via JS / parent layout instead */
+}
+
+.sidebar-header {
+  padding: 6px 10px 12px;
+}
+
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-sub);
+}
+
+/* Section labels */
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-faint);
+  padding: 16px 10px 6px;
+}
+
+/* Nav items */
+.sidebar-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-sub);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  text-align: left;
+}
+
+.sidebar-item:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.sidebar-item.active {
+  background: linear-gradient(90deg, rgba(0, 170, 255, 0.16), rgba(0, 170, 255, 0.05));
+  color: var(--accent);
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.sidebar-item-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-badge {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 2px 7px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sidebar-empty {
+  font-size: 12px;
+  color: var(--text-sub);
+  padding: 8px 18px;
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.sidebar-spacer {
+  flex: 1;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.sidebar-config {
+  color: var(--text-sub);
+}
+
+/* ── Layout shift when sidebar is open ── */
+.app-with-sidebar {
+  margin-left: 240px;
+  transition: margin-left 0.25s ease;
+}
+
+.app-no-sidebar {
+  margin-left: 0;
+  transition: margin-left 0.25s ease;
+}
