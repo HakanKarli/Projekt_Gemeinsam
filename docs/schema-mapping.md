@@ -2,19 +2,19 @@
 
 ## Ablageort des Schemas
 
-Das Basisschema liegt in:
+Fuer den tatsaechlich laufenden Stack (`docker-compose.yml`) ist massgeblich:
 
-- [`node-backend/migrations/0001_init.sql`](../node-backend/migrations/0001_init.sql)
+- [`db-init/001_schema.sql`](../db-init/001_schema.sql) — laeuft automatisch beim
+  ersten Start eines leeren `pgdata`-Volumes
+- ergaenzt um `ensureSchema()` in [`node-backend/src/db.js`](../node-backend/src/db.js),
+  bei jedem Start von `api`/`ingest` erneut ausgefuehrt
 
-Weitere Schemaaenderungen liegen in:
-
-- [`node-backend/migrations/`](../node-backend/migrations/)
-
-Die urspruengliche, inzwischen ergaenzte Schema-Datei liegt in:
-
-- [`db-init/001_schema.sql`](../db-init/001_schema.sql)
-
-Fuer den aktuellen Betrieb sind die Migrationen unter `node-backend/migrations/` massgeblich.
+Daneben existiert ein weitergehendes Schema unter
+[`node-backend/migrations/`](../node-backend/migrations/) (node-pg-migrate). Es wirkt
+sich auf die tatsaechlich laufende Datenbank **nicht** aus — es gibt dafuer keinen
+Compose-Dienst; angewendet wird es ausschliesslich von der Testsuite gegen einen
+eigens gestarteten Testcontainer. Einzelheiten in
+[Technische-Schulden.md](Technische-Schulden.md#1-der-wichtigste-befund-zwei-parallele-implementierungen).
 
 ## Speicherung der Messgroesse
 

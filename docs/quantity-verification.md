@@ -83,9 +83,10 @@ im Dashboard-Mapping.
 
 ## 5. Wie das Schema aussieht
 
-Maßgebliche Migration:
-[`node-backend/migrations/0001_init.sql`](../node-backend/migrations/0001_init.sql)
-(weitere Änderungen in `0002`–`0006`, keine davon betrifft `quantity`).
+Maßgeblich für den tatsächlich laufenden Stack:
+[`db-init/001_schema.sql`](../db-init/001_schema.sql) — siehe
+[schema-mapping.md](schema-mapping.md) zur Einordnung gegenüber
+`node-backend/migrations/`, das nicht gegen die laufende Datenbank angewendet wird.
 
 ```sql
 -- Messdaten als TimescaleDB-Hypertable

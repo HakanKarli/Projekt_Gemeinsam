@@ -3,8 +3,9 @@
 Läuft auf dem Raspberry Pi am Messpunkt: erfasst Sensorwerte, **setzt den
 Zeitstempel**, puffert dauerhaft und sendet mit Zusicherung an den MQTT-Broker.
 
-Damit beginnt die verlustfreie Kette am Sensor statt erst am Broker —
-siehe [../docs/Feldebene.md](../docs/Feldebene.md).
+Damit beginnt die verlustfreie Kette am Sensor statt erst am Broker.
+Einordnung, warum dieser Agent bislang nicht im Einsatz ist:
+[../docs/Architektur.md](../docs/Architektur.md#13-feldebene).
 
 ---
 

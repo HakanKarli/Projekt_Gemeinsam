@@ -125,8 +125,7 @@ GRUPPE1_POSTGRES_PASSWORD=
 
 Grafana ist aktuell nicht Teil von `docker-compose.yml` — bewusste
 Entscheidung gegen einen dauerhaften Grafana-Container (siehe
-[`Zielarchitektur.md`](./Zielarchitektur.md), Abschnitt zu
-Prometheus/Grafana). Für diese punktuelle Prüfung reicht ein temporärer
+[`Architektur.md`](./Architektur.md)). Für diese punktuelle Prüfung reicht ein temporärer
 Container im Netzwerk von Gruppe 1:
 
 ```bash

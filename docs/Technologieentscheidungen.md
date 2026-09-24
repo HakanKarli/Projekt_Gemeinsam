@@ -4,6 +4,15 @@
 > Bedingungen die Entscheidung neu zu treffen wäre.
 >
 > **Stand:** 28.07.2026 · Alle Zahlen sind am laufenden System gemessen, nicht geschätzt.
+>
+> ⚠️ **Hinweis zur Einordnung:** TE-001 vergleicht den Ingest-Worker mit einer
+> Go-Neuimplementierung anhand von Eigenschaften (Watchdog, Backoff-Retry,
+> dokumentierte Manual-Ack-API), die im tatsächlich laufenden `mqttBridge.js`
+> nicht existieren — sie gehören zum unbenutzten Ingest-Pfad `src/ingest.js`, siehe
+> [Technische-Schulden.md](Technische-Schulden.md#1-der-wichtigste-befund-zwei-parallele-implementierungen).
+> Die grundsätzliche Argumentation (JS teilt den Nachrichtenvertrag, eine zweite
+> Sprache würde ihn duplizieren) bleibt unabhängig davon gültig. Die Architektur
+> und Betriebsdetails in diesem Dokument beziehen sich auf [Architektur.md](Architektur.md).
 
 Der Zweck dieses Dokuments ist nicht, Technologien schlechtzureden. Er ist, die
 immer wiederkehrenden Fragen („sollten wir nicht besser…") einmal sauber zu beantworten,
@@ -82,7 +91,8 @@ Ehrlich benannt, nicht kleingeredet:
 
 Der Speichergewinn entspricht 0,13 % des verfügbaren Arbeitsspeichers. Die schnellere
 Startzeit ist folgenlos, weil der Broker während eines Neustarts ohnehin puffert — genau
-das wurde nachgewiesen (siehe [Verlustfreiheit.md](Verlustfreiheit.md)).
+das gilt für den unbenutzten Ingest-Pfad — siehe
+[Technische-Schulden.md](Technische-Schulden.md#1-der-wichtigste-befund-zwei-parallele-implementierungen).
 
 ### Was dagegen spricht
 
@@ -90,7 +100,7 @@ das wurde nachgewiesen (siehe [Verlustfreiheit.md](Verlustfreiheit.md)).
    `src/domain/schemas/` speist heute Eingabeprüfung, OpenAPI-Dokument und
    Typinformation aus **einer** Definition. Ein Go-Ingest bräuchte eigene Structs —
    derselbe Vertrag in zwei Sprachen, zwei Wahrheiten. Das ist als TYP-01 in
-   [Engineering-Standards.md](Engineering-Standards.md) ohnehin schon als Risiko geführt.
+   [Technische-Schulden.md](Technische-Schulden.md) ohnehin schon als Risiko geführt.
 
 2. **Geteilter Querschnittscode entfiele.** `lib/db.js`, `lib/logger.js`,
    `lib/watchdog.js`, `lib/shutdown.js` und die Migrationen werden von API und Ingest
@@ -239,7 +249,7 @@ hat eine Laufzeitumgebung; vorhandenen Python-Code um Pufferung zu ergänzen ist
 ungleich billiger als eine Neuimplementierung. Go wäre erst dann im Vorteil, wenn auf
 Zielhardware **ohne** Laufzeitumgebung ausgeliefert werden müsste.
 
-Einzelheiten und der konkrete Umbau: [Feldebene.md](Feldebene.md).
+Einzelheiten zum tatsächlichen Stand der Feldebene: [Architektur.md](Architektur.md#13-feldebene).
 
 ### Lohnt sich klar: Auswertung — Python
 
@@ -293,7 +303,7 @@ eine Vorliebe, keine Anforderung.
 1. **`checkJs` + Zod-Typen konsequent nutzen** — halber Tag, schließt eine Fehlerklasse
 2. **Continuous Aggregates, Kompression, Retention in SQL** — zwei Stunden
 3. **Pufferung und Uhrzeit auf den Pis** — zuerst messen, dann entscheiden
-   ([Feldebene.md](Feldebene.md))
+   ([Architektur.md](Architektur.md#13-feldebene))
 4. **Auswertungsdienst in Python** — sobald die fachliche Frage gestellt wird
 
 ---

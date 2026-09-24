@@ -6,8 +6,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 ## [2.0.0] — 2026-07-28
 
 Umbau auf einen containerisierten, selbstheilenden Betrieb mit verlustfreier
-Ingest-Kette. Grundlage: [docs/Zielarchitektur.md](docs/Zielarchitektur.md) und
-[docs/Engineering-Standards.md](docs/Engineering-Standards.md).
+Ingest-Kette.
+
+> ⚠️ **Nachträglicher Hinweis (23.09.2026):** Ein erheblicher Teil der unten
+> gelisteten Punkte (Idempotenz, Ack-nach-Commit, Watchdog, zentrale
+> Fehler-Middleware, `GET /api/panels`, gemeinsamer Frontend-Stammdaten-Context,
+> strukturiertes Logging) ist in einem parallelen Code-Pfad umgesetzt, der von
+> `docker-compose.yml` nicht gestartet wird. Was tatsächlich läuft, steht in
+> [docs/Architektur.md](docs/Architektur.md); die Lücke ist beschrieben in
+> [docs/Technische-Schulden.md](docs/Technische-Schulden.md#1-der-wichtigste-befund-zwei-parallele-implementierungen).
 
 ### Sicherheit
 
@@ -91,16 +98,21 @@ Ingest-Kette. Grundlage: [docs/Zielarchitektur.md](docs/Zielarchitektur.md) und
 
 ### Entfernt
 
-- `src/mqttBridge.js`, `src/alertListener.js`, `src/db.js`, `src/routes/` — ersetzt.
+- `src/mqttBridge.js`, `src/alertListener.js`, `src/db.js`, `src/routes/` — als
+  ersetzt vorgesehen, **liegen aber weiterhin im Repository und sind die
+  tatsächlich von `docker-compose.yml` gestarteten Dateien** (Stand 23.09.2026,
+  siehe [docs/Technische-Schulden.md](docs/Technische-Schulden.md)).
 - `migrations/001_threshold_violations.sql` — bezog sich auf ein Schema, das es seit
   Längerem nicht mehr gibt, und wäre beim Ausführen gescheitert.
 - `hooks/useSensorPoller.js` und die wirkungslosen `subscribe`/`unsubscribe`-Hüllen.
-- `db-init/` — in die Migrationen überführt.
+- `db-init/` — als in die Migrationen überführt vorgesehen, **ist aber weiterhin
+  die Quelle des tatsächlich verwendeten Schemas** (siehe
+  [docs/schema-mapping.md](docs/schema-mapping.md)).
 
 ### Noch offen
 
 - Audit-Trail ohne Identität (`changed_by`, Anmeldung) — bewusst vertagt, siehe
-  AUD-01 in [docs/Engineering-Standards.md](docs/Engineering-Standards.md).
+  [docs/Technische-Schulden.md](docs/Technische-Schulden.md).
 - Sicherungsziel liegt auf derselben Hardware wie die Datenbank.
 - Kontrolliertes Vokabular für Messgrößen, Kompression und Aufbewahrungsregel
   (DATA-01 bis DATA-03).
