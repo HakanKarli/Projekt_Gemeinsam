@@ -47,9 +47,18 @@ export function useMqtt(brokerUrl, enabled) {
         });
         clientRef.current = client;
 
-        client.on('connect', () => { setConnected(true); setError(null); client.subscribe(SENSORS_TOPIC); });
-        client.on('error',   (err) => setError(err.message));
-        client.on('close',   () => setConnected(false));
+        client.on('connect', () => {
+            console.log('[MQTT] verbunden mit', brokerUrl);
+            setConnected(true);
+            setError(null);
+            client.subscribe(SENSORS_TOPIC, (err) => {
+                if (err) console.error('[MQTT] subscribe fehlgeschlagen:', err.message);
+                else console.log('[MQTT] subscribed:', SENSORS_TOPIC);
+            });
+        });
+        client.on('error',   (err) => { console.error('[MQTT] Fehler:', err.message); setError(err.message); });
+        client.on('close',   () => { console.log('[MQTT] Verbindung geschlossen'); setConnected(false); });
+        client.on('reconnect', () => console.log('[MQTT] reconnecting...'));
 
         client.on('message', (_topic, payload) => {
             try {
@@ -82,7 +91,7 @@ export function useMqtt(brokerUrl, enabled) {
                 if (!rafRef.current) {
                     rafRef.current = requestAnimationFrame(flushListeners);
                 }
-            } catch { /* ignore malformed */ }
+            } catch (err) { console.error('[MQTT] Nachricht konnte nicht verarbeitet werden:', err); }
         });
 
         return () => {

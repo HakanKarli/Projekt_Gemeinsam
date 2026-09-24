@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Plot, CHART, yRange } from '../lib/plot';
 import { useMqttContext } from '../store/useMqttContext';
+import { getSensorData } from '../api';
 import './SensorPanel.css';
 
 const ACCENT    = CHART.accent;
@@ -10,8 +11,22 @@ const TEXT      = CHART.text;
 const COLOR_MAX = CHART.max;
 const COLOR_MIN = CHART.min;
 
-const PLOT_CONFIG = Object.freeze({ displayModeBar: false, responsive: true, scrollZoom: true });
+// doubleClick: false — Plotlys eingebautes Reset-Verhalten setzt die Achse auf ein reines
+// Daten-Autorange zurück und ignoriert dabei unsere Schwellenwert-Linien und das Polster aus
+// yRange() (siehe unten). Das Ergebnis wirkt "komisch" verglichen mit der Ansicht, die nach
+// einem neuen Messwert ohnehin gerendert wird. Der Doppelklick wird stattdessen selbst behandelt.
+const PLOT_CONFIG = Object.freeze({ displayModeBar: false, responsive: true, scrollZoom: true, doubleClick: false });
 const PLOT_STYLE  = Object.freeze({ width: '100%', height: '100%' });
+
+// Zeitraum-Presets im Vollbild. "hours" wird direkt in from/to fuer getSensorData
+// umgerechnet; 5000 ist der vom Backend erlaubte Maximalwert fuer "limit".
+const RANGE_PRESETS  = [
+    { label: '6h',      hours: 6 },
+    { label: '12h',     hours: 12 },
+    { label: '24h',     hours: 24 },
+    { label: '1 Woche', hours: 24 * 7 },
+];
+const HISTORY_LIMIT = 5000;
 
 function SensorPanel({
     initialTopic = '',
@@ -28,7 +43,20 @@ function SensorPanel({
     const topic = initialTopic;
     const [fullscreen, setFullscreen] = useState(false);
     const [data,       setData]       = useState([]);
+    const [resetNonce, setResetNonce] = useState(0);
     const prevTopicRef = useRef('');
+
+    // Historische Ansicht im Vollbild: null = live (letzte MAX_POINTS aus dem
+    // MQTT-Ringpuffer). Gesetzt, sobald ein Zeitraum-Preset angeklickt wurde.
+    const [historyRange, setHistoryRange] = useState(null);   // Label des aktiven Presets
+    const [historyData,  setHistoryData]  = useState(null);
+    const [historyError, setHistoryError] = useState('');
+    const [loadingRange, setLoadingRange] = useState(false);
+
+    // Erzwingt beim Doppelklick, dass Plotly unseren aktuell berechneten Bereich
+    // (Daten + Schwellenwert-Polster, siehe yAxisRange) neu übernimmt, statt auf
+    // einen von Plotly selbst autorangierten Bereich zurückzufallen.
+    const onPlotDoubleClick = useCallback(() => setResetNonce(n => n + 1), []);
 
     const onData = useCallback((newData) => setData(newData), []);
 
@@ -40,6 +68,36 @@ function SensorPanel({
     // Namen live aus Registry auflösen
     const resolvedName = sensorNames?.[effectiveUuid] || effectiveUuid;
     const displayLabel = resolvedName;
+
+    // Laedt einen laengeren Zeitraum per REST nach (der MQTT-Ringpuffer haelt nur
+    // die letzten 60 Live-Punkte, siehe useMqtt.js). Ersetzt nur die Chart-Daten —
+    // der aktuelle Messwert im Kopf bleibt live.
+    const loadRange = useCallback(async (preset) => {
+        if (!effectiveUuid || !effectiveQty) return;
+        setLoadingRange(true);
+        setHistoryError('');
+        try {
+            const to   = new Date();
+            const from = new Date(to.getTime() - preset.hours * 60 * 60 * 1000);
+            const rows = await getSensorData(effectiveUuid, effectiveQty, from.toISOString(), to.toISOString(), HISTORY_LIMIT);
+            setHistoryData(rows.map(r => ({ timestamp: r.time, value: parseFloat(r.value), unit: r.unit })));
+            setHistoryRange(preset.label);
+        } catch (err) {
+            setHistoryError(err.message || 'Zeitraum konnte nicht geladen werden');
+        } finally {
+            setLoadingRange(false);
+        }
+    }, [effectiveUuid, effectiveQty]);
+
+    const backToLive = useCallback(() => {
+        setHistoryRange(null);
+        setHistoryData(null);
+        setHistoryError('');
+    }, []);
+
+    // Vollbild verlassen oder Sensor wechseln: zurueck zur Live-Ansicht.
+    useEffect(() => { if (!fullscreen) backToLive(); }, [fullscreen, backToLive]);
+    useEffect(() => { backToLive(); }, [topic, backToLive]);
 
     useEffect(() => {
         if (connected && topic) subscribe(topic);
@@ -71,8 +129,12 @@ function SensorPanel({
         return () => window.removeEventListener('keydown', onKey);
     }, [fullscreen]);
 
+    // Chart zeigt entweder den nachgeladenen Zeitraum oder den Live-Ringpuffer;
+    // der aktuelle Messwert im Kopf bleibt davon unberuehrt immer live.
+    const displayData = historyData ?? data;
+
     const latest  = data[data.length - 1];
-    const unit    = latest?.unit ?? '';
+    const unit    = (displayData[displayData.length - 1] ?? latest)?.unit ?? '';
 
     const thresholdShapes = useMemo(() => {
         const shapes = [];
@@ -108,14 +170,17 @@ function SensorPanel({
     // Schwellenwerte bleiben im Bild. Plotly behält manuellen Zoom dank
     // konstantem uirevision bei.
     const yAxisRange = useMemo(() => {
-        const vals = data.map((d) => d.value);
+        const vals = displayData.map((d) => d.value);
         if (minValue != null) vals.push(minValue);
         if (maxValue != null) vals.push(maxValue);
         return yRange(vals);
-    }, [data, minValue, maxValue]);
+    }, [displayData, minValue, maxValue]);
 
     const plotLayout = useMemo(() => ({
-        uirevision: topic,
+        // historyRange in der Revision, damit ein Wechsel des Zeitraum-Presets
+        // ebenfalls sauber auf den neu berechneten Bereich zurueckspringt statt
+        // einen zuvor manuell gezoomten Ausschnitt beizubehalten.
+        uirevision: `${topic}:${resetNonce}:${historyRange ?? 'live'}`,
         autosize: true,
         paper_bgcolor: BG,
         plot_bgcolor: BG,
@@ -131,18 +196,18 @@ function SensorPanel({
         hovermode: 'x unified',
         shapes: thresholdShapes,
         annotations: thresholdAnnotations,
-    }), [topic, unit, yAxisRange, thresholdShapes, thresholdAnnotations]);
+    }), [topic, resetNonce, historyRange, unit, yAxisRange, thresholdShapes, thresholdAnnotations]);
 
     const plotData = useMemo(() => [{
-        x: data.map(d => new Date(d.timestamp)),
-        y: data.map(d => d.value),
+        x: displayData.map(d => new Date(d.timestamp)),
+        y: displayData.map(d => d.value),
         type: 'scatter',
         mode: 'lines',
         line: { color: ACCENT, width: 2, shape: 'spline' },
         fill: 'tozeroy',
         fillcolor: 'rgba(0,170,255,0.08)',
         name: displayLabel,
-    }], [data, displayLabel]);
+    }], [displayData, displayLabel]);
 
     const latestVal    = latest ? parseFloat(latest.value) : null;
     const isViolating  = latestVal != null && (
@@ -201,18 +266,44 @@ function SensorPanel({
                 )}
             </div>
 
+            {/* ── Zeitraum-Presets: nur im Vollbild, laedt per REST nach ── */}
+            {isFullscreen && (
+                <div className="sp-range-row">
+                    <button
+                        className={`sp-range-btn${!historyRange ? ' active' : ''}`}
+                        onClick={backToLive}
+                        title="Zurueck zur Live-Ansicht"
+                    >
+                        Live
+                    </button>
+                    {RANGE_PRESETS.map((preset) => (
+                        <button
+                            key={preset.label}
+                            className={`sp-range-btn${historyRange === preset.label ? ' active' : ''}`}
+                            onClick={() => loadRange(preset)}
+                            disabled={loadingRange}
+                        >
+                            {preset.label}
+                        </button>
+                    ))}
+                    {loadingRange && <span className="sp-range-status">lädt…</span>}
+                    {!loadingRange && historyError && <span className="sp-range-status sp-range-error">{historyError}</span>}
+                </div>
+            )}
+
             {/* ── Chart ── */}
             <div className="sp-chart-wrap">
-                {data.length === 0 ? (
+                {displayData.length === 0 ? (
                     <div className="sp-empty">
-                        <div className="sp-spinner" />
-                        <span>Warte auf Daten…</span>
+                        {!historyRange && <div className="sp-spinner" />}
+                        <span>{historyRange ? 'Keine Daten in diesem Zeitraum' : 'Warte auf Daten…'}</span>
                     </div>
                 ) : (
                     <Plot
                         data={plotData}
                         layout={plotLayout}
                         config={PLOT_CONFIG}
+                        onDoubleClick={onPlotDoubleClick}
                         useResizeHandler
                         style={PLOT_STYLE}
                     />

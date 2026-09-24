@@ -4,7 +4,7 @@ const path = require('path');
 const pool = require('../db');
 
 const router = Router();
-const LOGO_PATH = path.resolve(__dirname, '..', 'ohb-logo.png');
+const LOGO_PATH = path.resolve(__dirname, '..', 'HHZ-Logo.png');
 
 // POST /api/report
 // Body: { cleanroom_id: number, from: "ISO", to: "ISO" }
@@ -202,7 +202,7 @@ router.post('/', async (req, res) => {
 
         const violations = violationsBySensorQuantity[uuid]?.[quantity] || [];
         const metricViolDuration = violations.reduce((s, v) => s + (parseFloat(v.duration_sec) || 0), 0);
-        const metricViolPoints   = violations.reduce((s, v) => s + (parseInt(v.data_points)    || 0), 0);
+        const metricViolPoints = violations.reduce((s, v) => s + (parseInt(v.data_points) || 0), 0);
 
         doc.fontSize(9).font('Helvetica');
         doc.text(`Datenpunkte: ${rows.length}  |  Min: ${min.toFixed(2)}  |  Max: ${max.toFixed(2)}  |  Durchschnitt: ${avg.toFixed(2)}`);

@@ -10,7 +10,7 @@ const path = require('node:path');
 const PDFDocument = require('pdfkit');
 const logger = require('../../lib/logger');
 
-const LOGO_PATH = path.resolve(__dirname, '..', '..', 'ohb-logo.png');
+const LOGO_PATH = path.resolve(__dirname, '..', '..', 'HHZ-Logo.png');
 const TIMEZONE = 'Europe/Berlin';
 
 /** Ab dieser Menge wird die Messwerttabelle gekürzt — sonst wächst der Report ins Unlesbare. */

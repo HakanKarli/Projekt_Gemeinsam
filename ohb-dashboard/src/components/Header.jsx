@@ -10,8 +10,8 @@ export default function Header({ onSettingsOpen, onReportOpen, onAlertOpen }) {
             <div className="header-left">
                 <div className="header-logo">
                     <img
-                        src="/ohb-logo.png"
-                        alt="OHB Logo"
+                        src="/HHZ-Logo.png"
+                        alt="HHZ Logo"
                         className="header-logo-img"
                     />
                     <span className="header-brand-sub">Sensor Dashboard</span>
